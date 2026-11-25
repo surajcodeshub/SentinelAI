@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # SentinelAI – Autonomous Cyber Defense System
 
 **Developed by:** Suraj | BCA Cyber Security | Lamrin Tech Skills University, Punjab
@@ -49,3 +50,7 @@ SentinelAI/
 ├── templates/              # Jinja2 HTML templates
 └── static/                 # CSS & JavaScript
 ```
+=======
+# SentinelAI
+AI-based Cyber Security Monitoring System – BCA Final Year Project
+>>>>>>> 8bf48578daf32310ad2618a92fda840ec205410a
