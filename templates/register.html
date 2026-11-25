@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SentinelAI – Create Account</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#0a0d14;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.bg-grid{position:fixed;inset:0;background-image:linear-gradient(rgba(59,130,246,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;}
+
+/* glow orbs */
+.orb{position:fixed;border-radius:50%;filter:blur(80px);opacity:.12;pointer-events:none;}
+.orb1{width:400px;height:400px;background:#3b82f6;top:-100px;left:-100px;}
+.orb2{width:300px;height:300px;background:#a855f7;bottom:-80px;right:-80px;}
+
+.box{background:#131929;border:1px solid rgba(99,179,237,0.15);border-radius:16px;padding:40px 36px;width:100%;max-width:440px;position:relative;z-index:1;box-shadow:0 30px 70px rgba(0,0,0,0.5);}
+
+/* logo */
+.logo{display:flex;align-items:center;gap:12px;margin-bottom:6px;justify-content:center;}
+.logo-icon{width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,#3b82f6,#06b6d4);display:flex;align-items:center;justify-content:center;font-size:21px;color:#fff;box-shadow:0 0 22px rgba(59,130,246,0.45);}
+.logo-title{font-size:20px;font-weight:700;color:#e2e8f0;}
+.logo-sub{font-size:11px;color:#64748b;text-align:center;margin-bottom:28px;letter-spacing:.5px;}
+
+/* form */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-group{margin-bottom:14px;}
+.form-group label{display:block;font-size:11px;color:#94a3b8;margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;}
+.input-wrap{position:relative;}
+.input-wrap i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#475569;font-size:13px;}
+.input-wrap input{width:100%;background:#0d1118;border:1px solid rgba(99,179,237,0.14);color:#e2e8f0;padding:11px 12px 11px 36px;border-radius:8px;font-size:13.5px;font-family:'Inter',sans-serif;outline:none;transition:border-color .2s,box-shadow .2s;}
+.input-wrap input:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,0.12);}
+.input-wrap input::placeholder{color:#374151;}
+
+/* strength bar */
+.strength-wrap{margin-top:6px;}
+.strength-bar{height:3px;border-radius:2px;background:#1e293b;overflow:hidden;}
+.strength-fill{height:100%;border-radius:2px;width:0;transition:width .3s,background .3s;}
+.strength-label{font-size:10px;color:#64748b;margin-top:4px;}
+
+/* submit */
+.btn-submit{width:100%;background:linear-gradient(135deg,#3b82f6,#06b6d4);color:#fff;border:none;padding:13px;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px;transition:opacity .2s,transform .2s;display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:.3px;}
+.btn-submit:hover{opacity:.9;transform:translateY(-1px);}
+.btn-submit:active{transform:translateY(0);}
+
+/* alerts */
+.alert{padding:11px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;display:flex;align-items:flex-start;gap:9px;line-height:1.5;}
+.alert-error  {background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.3); color:#ef4444;}
+.alert-success{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.3);color:#10b981;}
+
+/* divider */
+.divider{display:flex;align-items:center;gap:10px;margin:18px 0;color:#374151;font-size:12px;}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(99,179,237,0.1);}
+
+/* footer link */
+.footer-link{text-align:center;font-size:13px;color:#64748b;margin-top:4px;}
+.footer-link a{color:#3b82f6;text-decoration:none;font-weight:500;}
+.footer-link a:hover{color:#06b6d4;}
+
+/* requirements list */
+.req-list{font-size:11px;color:#475569;margin-top:6px;padding-left:4px;}
+.req-list li{list-style:none;padding:1px 0;display:flex;align-items:center;gap:5px;}
+.req-list li i{font-size:9px;}
+.req-list li.ok{color:#10b981;}
+.req-list li.fail{color:#475569;}
+
+@media(max-width:480px){
+  .box{padding:28px 20px;}
+  .form-row{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+<div class="box">
+
+  {% if success %}
+  <!-- SUCCESS STATE -->
+  <div style="text-align:center;padding:20px 0">
+    <div style="font-size:52px;margin-bottom:16px">✅</div>
+    <h2 style="color:#10b981;font-size:20px;margin-bottom:8px">Account Created!</h2>
+    <p style="color:#64748b;font-size:13px;margin-bottom:24px">
+      Welcome, <strong style="color:#e2e8f0">{{ username }}</strong>!<br>
+      Your account is ready. You can now log in.
+    </p>
+    <a href="/login" style="display:inline-flex;align-items:center;gap:8px;background:#3b82f6;color:#fff;padding:11px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">
+      <i class="fas fa-right-to-bracket"></i> Go to Login
+    </a>
+  </div>
+
+  {% else %}
+  <!-- REGISTER FORM -->
+  <div class="logo">
+    <div class="logo-icon"><i class="fas fa-shield-halved"></i></div>
+    <span class="logo-title">SentinelAI</span>
+  </div>
+  <p class="logo-sub">Create your security account</p>
+
+  {% if error %}
+  <div class="alert alert-error"><i class="fas fa-circle-xmark"></i> {{ error }}</div>
+  {% endif %}
+
+  <form method="POST" action="/register" id="reg-form" novalidate>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Full Name / Username</label>
+        <div class="input-wrap">
+          <i class="fas fa-user"></i>
+          <input type="text" name="username" id="username"
+                 placeholder="e.g. suraj"
+                 value="{{ v.username if v else '' }}"
+                 required autocomplete="username"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Email Address</label>
+        <div class="input-wrap">
+          <i class="fas fa-envelope"></i>
+          <input type="email" name="email" id="email"
+                 placeholder="you@example.com"
+                 value="{{ v.email if v else '' }}"
+                 required autocomplete="email"/>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Password</label>
+      <div class="input-wrap">
+        <i class="fas fa-lock"></i>
+        <input type="password" name="password" id="password"
+               placeholder="Create a strong password"
+               required oninput="checkStrength(this.value)"/>
+      </div>
+      <div class="strength-wrap">
+        <div class="strength-bar"><div class="strength-fill" id="strength-fill"></div></div>
+        <div class="strength-label" id="strength-label">Enter a password</div>
+      </div>
+      <ul class="req-list" id="req-list">
+        <li id="req-len"  class="fail"><i class="fas fa-circle"></i> At least 6 characters</li>
+        <li id="req-num"  class="fail"><i class="fas fa-circle"></i> Contains a number</li>
+        <li id="req-upp"  class="fail"><i class="fas fa-circle"></i> Contains uppercase letter</li>
+      </ul>
+    </div>
+
+    <div class="form-group">
+      <label>Confirm Password</label>
+      <div class="input-wrap">
+        <i class="fas fa-lock-open"></i>
+        <input type="password" name="confirm_password" id="confirm"
+               placeholder="Repeat your password"
+               required oninput="checkMatch()"/>
+      </div>
+      <div class="strength-label" id="match-label"></div>
+    </div>
+
+    <button type="submit" class="btn-submit" id="submit-btn">
+      <i class="fas fa-user-plus"></i> Create Account
+    </button>
+  </form>
+
+  <div class="divider">or</div>
+  <div class="footer-link">
+    Already have an account? <a href="/login">Sign in</a>
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+function checkStrength(pw) {
+  const fill  = document.getElementById('strength-fill');
+  const label = document.getElementById('strength-label');
+  const rLen  = document.getElementById('req-len');
+  const rNum  = document.getElementById('req-num');
+  const rUpp  = document.getElementById('req-upp');
+
+  const hasLen = pw.length >= 6;
+  const hasNum = /\d/.test(pw);
+  const hasUpp = /[A-Z]/.test(pw);
+
+  rLen.className = hasLen ? 'ok' : 'fail';
+  rNum.className = hasNum ? 'ok' : 'fail';
+  rUpp.className = hasUpp ? 'ok' : 'fail';
+
+  rLen.querySelector('i').className = hasLen ? 'fas fa-check-circle' : 'fas fa-circle';
+  rNum.querySelector('i').className = hasNum ? 'fas fa-check-circle' : 'fas fa-circle';
+  rUpp.querySelector('i').className = hasUpp ? 'fas fa-check-circle' : 'fas fa-circle';
+
+  const score = [hasLen, hasNum, hasUpp, pw.length >= 10, /[^a-zA-Z0-9]/.test(pw)].filter(Boolean).length;
+  const configs = [
+    {w:'0%',   bg:'#1e293b', txt:''},
+    {w:'20%',  bg:'#ef4444', txt:'Very weak'},
+    {w:'40%',  bg:'#f97316', txt:'Weak'},
+    {w:'65%',  bg:'#eab308', txt:'Fair'},
+    {w:'85%',  bg:'#3b82f6', txt:'Strong'},
+    {w:'100%', bg:'#10b981', txt:'Very strong'},
+  ];
+  const c = configs[score] || configs[0];
+  fill.style.width      = c.w;
+  fill.style.background = c.bg;
+  label.textContent     = c.txt;
+  label.style.color     = c.bg;
+  checkMatch();
+}
+
+function checkMatch() {
+  const pw  = document.getElementById('password').value;
+  const cf  = document.getElementById('confirm').value;
+  const lbl = document.getElementById('match-label');
+  if (!cf) { lbl.textContent = ''; return; }
+  if (pw === cf) {
+    lbl.textContent = '✓ Passwords match';
+    lbl.style.color = '#10b981';
+  } else {
+    lbl.textContent = '✗ Passwords do not match';
+    lbl.style.color = '#ef4444';
+  }
+}
+</script>
+</body>
+</html>

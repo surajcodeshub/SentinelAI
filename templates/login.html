@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SentinelAI – Sign In</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#0a0d14;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.bg-grid{position:fixed;inset:0;background-image:linear-gradient(rgba(59,130,246,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;}
+.orb{position:fixed;border-radius:50%;filter:blur(80px);opacity:.12;pointer-events:none;}
+.orb1{width:400px;height:400px;background:#3b82f6;top:-100px;right:-100px;}
+.orb2{width:300px;height:300px;background:#06b6d4;bottom:-80px;left:-80px;}
+
+.box{background:#131929;border:1px solid rgba(99,179,237,0.15);border-radius:16px;padding:42px 36px;width:100%;max-width:400px;position:relative;z-index:1;box-shadow:0 30px 70px rgba(0,0,0,0.5);}
+
+.logo{display:flex;align-items:center;gap:12px;margin-bottom:6px;justify-content:center;}
+.logo-icon{width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,#3b82f6,#06b6d4);display:flex;align-items:center;justify-content:center;font-size:21px;color:#fff;box-shadow:0 0 22px rgba(59,130,246,0.45);}
+.logo-title{font-size:20px;font-weight:700;color:#e2e8f0;}
+.logo-sub{font-size:11px;color:#64748b;text-align:center;margin-bottom:30px;letter-spacing:.5px;}
+
+.form-group{margin-bottom:16px;}
+.form-group label{display:block;font-size:11px;color:#94a3b8;margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;}
+.input-wrap{position:relative;}
+.input-wrap i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#475569;font-size:13px;}
+.input-wrap input{width:100%;background:#0d1118;border:1px solid rgba(99,179,237,0.14);color:#e2e8f0;padding:11px 12px 11px 36px;border-radius:8px;font-size:13.5px;font-family:'Inter',sans-serif;outline:none;transition:border-color .2s,box-shadow .2s;}
+.input-wrap input:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,0.12);}
+.input-wrap input::placeholder{color:#374151;}
+
+.btn-submit{width:100%;background:linear-gradient(135deg,#3b82f6,#06b6d4);color:#fff;border:none;padding:13px;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px;transition:opacity .2s,transform .2s;display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:.3px;}
+.btn-submit:hover{opacity:.9;transform:translateY(-1px);}
+
+.alert-error{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);color:#ef4444;padding:11px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+
+.divider{display:flex;align-items:center;gap:10px;margin:20px 0;color:#374151;font-size:12px;}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(99,179,237,0.1);}
+
+.footer-link{text-align:center;font-size:13px;color:#64748b;}
+.footer-link a{color:#3b82f6;text-decoration:none;font-weight:500;}
+.footer-link a:hover{color:#06b6d4;}
+
+@media(max-width:480px){.box{padding:28px 20px;}}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+<div class="box">
+  <div class="logo">
+    <div class="logo-icon"><i class="fas fa-shield-halved"></i></div>
+    <span class="logo-title">SentinelAI</span>
+  </div>
+  <p class="logo-sub">Sign in to your security dashboard</p>
+
+  {% if error %}
+  <div class="alert-error"><i class="fas fa-circle-xmark"></i> {{ error }}</div>
+  {% endif %}
+
+  <form method="POST" action="/login">
+    <div class="form-group">
+      <label>Username or Email</label>
+      <div class="input-wrap">
+        <i class="fas fa-user"></i>
+        <input type="text" name="identifier"
+               placeholder="Enter username or email"
+               value="{{ identifier or '' }}"
+               required autofocus autocomplete="username"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <div class="input-wrap">
+        <i class="fas fa-lock"></i>
+        <input type="password" name="password"
+               placeholder="Enter your password"
+               required autocomplete="current-password"/>
+      </div>
+    </div>
+    <button type="submit" class="btn-submit">
+      <i class="fas fa-right-to-bracket"></i> Sign In
+    </button>
+  </form>
+
+  <div class="divider">or</div>
+  <div class="footer-link">
+    Don't have an account? <a href="/register">Create one</a>
+  </div>
+</div>
+</body>
+</html>

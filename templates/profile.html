@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block breadcrumb %}My Profile{% endblock %}
+{% block content %}
+<div class="page-header"><h2><i class="fas fa-user-shield"></i> My Profile</h2></div>
+
+<div class="settings-grid">
+  <div class="chart-card">
+    <div class="card-header"><span><i class="fas fa-id-card"></i> Account Info</span></div>
+    <div class="sys-info-grid">
+      <div class="si-row"><span class="si-key">Username</span><span class="si-val mono">{{ user }}</span></div>
+      <div class="si-row"><span class="si-key">Role</span><span class="si-val mono">{{ role }}</span></div>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="card-header"><span><i class="fas fa-lock"></i> Change Password</span></div>
+    {% if error %}<div class="info-banner" style="border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.07)"><i class="fas fa-circle-xmark" style="color:#ef4444"></i><span style="color:#ef4444">{{ error }}</span></div>{% endif %}
+    {% if success %}<div class="info-banner" style="border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.07)"><i class="fas fa-check-circle" style="color:#10b981"></i><span style="color:#10b981">{{ success }}</span></div>{% endif %}
+    <form method="POST" action="/change_password" class="settings-form">
+      <div class="sf-group"><label>Current Password</label><input type="password" name="old_password" required style="max-width:280px"/></div>
+      <div class="sf-group"><label>New Password</label><input type="password" name="new_password" required style="max-width:280px"/></div>
+      <div class="sf-group"><label>Confirm New Password</label><input type="password" name="confirm_password" required style="max-width:280px"/></div>
+      <button type="submit" class="btn-primary"><i class="fas fa-floppy-disk"></i> Change Password</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

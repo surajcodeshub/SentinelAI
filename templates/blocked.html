@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block breadcrumb %}Blocked IPs{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h2><i class="fas fa-ban"></i> Blocked IPs & Whitelist</h2>
+  <div class="ph-right">
+    <button class="btn-primary" onclick="showBlockForm()"><i class="fas fa-plus"></i> Block IP</button>
+    <button class="btn-secondary" onclick="showWhitelistForm()"><i class="fas fa-shield-check"></i> Whitelist IP</button>
+  </div>
+</div>
+
+<div class="info-banner">
+  <i class="fas fa-lightbulb"></i>
+  <span>Blocked IPs are logged but their alerts are auto-flagged. Whitelisted IPs are completely ignored by detectors — use for your own trusted machines.</span>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;flex-wrap:wrap">
+
+  <div class="chart-card">
+    <div class="card-header"><span><i class="fas fa-ban"></i> Blocked IPs ({{ blocked|length }})</span></div>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead><tr><th>IP Address</th><th>Reason</th><th>Blocked At</th><th>By</th><th>Action</th></tr></thead>
+        <tbody>
+          {% if blocked %}{% for b in blocked %}
+          <tr>
+            <td class="mono ip">{{ b.ip }}</td>
+            <td class="desc-cell">{{ b.reason }}</td>
+            <td class="mono ts">{{ b.blocked_at }}</td>
+            <td class="mono">{{ b.blocked_by }}</td>
+            <td><button class="btn-sm btn-red" onclick="unblockIp('{{ b.ip }}')"><i class="fas fa-unlock"></i> Unblock</button></td>
+          </tr>
+          {% endfor %}{% else %}
+          <tr><td colspan="5" class="empty-cell">No IPs blocked yet</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="card-header"><span><i class="fas fa-shield-check"></i> Trusted IPs / Whitelist ({{ whitelist|length }})</span></div>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead><tr><th>IP Address</th><th>Label</th><th>Added</th></tr></thead>
+        <tbody>
+          {% if whitelist %}{% for w in whitelist %}
+          <tr>
+            <td class="mono ip">{{ w.ip }}</td>
+            <td>{{ w.label or '—' }}</td>
+            <td class="mono ts">{{ w.added_at }}</td>
+          </tr>
+          {% endfor %}{% else %}
+          <tr><td colspan="3" class="empty-cell">No trusted IPs added yet</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Block modal -->
+<div class="modal-overlay" id="block-modal" style="display:none" onclick="closeModal(event)">
+  <div class="modal-box">
+    <div class="modal-header"><h3><i class="fas fa-ban"></i> Block an IP Address</h3></div>
+    <div class="sf-group" style="margin-bottom:12px"><label>IP Address</label><input type="text" id="block-ip" placeholder="e.g. 192.168.1.100" style="max-width:100%;background:#0f1420;border:1px solid rgba(99,179,237,0.15);color:#e2e8f0;padding:9px 12px;border-radius:6px;font-size:14px;width:100%;outline:none"/></div>
+    <div class="sf-group"><label>Reason</label><input type="text" id="block-reason" placeholder="e.g. Brute-force attacker" style="max-width:100%;background:#0f1420;border:1px solid rgba(99,179,237,0.15);color:#e2e8f0;padding:9px 12px;border-radius:6px;font-size:14px;width:100%;outline:none"/></div>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="confirmBlock()"><i class="fas fa-ban"></i> Block</button>
+      <button class="btn-ghost" onclick="document.getElementById('block-modal').style.display='none'">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Whitelist modal -->
+<div class="modal-overlay" id="wl-modal" style="display:none" onclick="closeModal(event)">
+  <div class="modal-box">
+    <div class="modal-header"><h3><i class="fas fa-shield-check"></i> Add Trusted IP</h3></div>
+    <div class="sf-group" style="margin-bottom:12px"><label>IP Address</label><input type="text" id="wl-ip" placeholder="e.g. 192.168.0.5" style="max-width:100%;background:#0f1420;border:1px solid rgba(99,179,237,0.15);color:#e2e8f0;padding:9px 12px;border-radius:6px;font-size:14px;width:100%;outline:none"/></div>
+    <div class="sf-group"><label>Label (optional)</label><input type="text" id="wl-label" placeholder="e.g. My Home PC" style="max-width:100%;background:#0f1420;border:1px solid rgba(99,179,237,0.15);color:#e2e8f0;padding:9px 12px;border-radius:6px;font-size:14px;width:100%;outline:none"/></div>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="confirmWhitelist()"><i class="fas fa-shield-check"></i> Add</button>
+      <button class="btn-ghost" onclick="document.getElementById('wl-modal').style.display='none'">Cancel</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+function showBlockForm()     { document.getElementById('block-modal').style.display='flex'; }
+function showWhitelistForm() { document.getElementById('wl-modal').style.display='flex'; }
+function closeModal(e)       { if(e.target.classList.contains('modal-overlay')) e.target.style.display='none'; }
+
+async function confirmBlock() {
+  const ip = document.getElementById('block-ip').value.trim();
+  const reason = document.getElementById('block-reason').value.trim() || 'Manual block';
+  if (!ip) return showToast('Enter an IP address','warning');
+  await fetch('/api/block',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ip,reason})});
+  showToast(`${ip} blocked`,'success');
+  document.getElementById('block-modal').style.display='none';
+  setTimeout(()=>location.reload(),1000);
+}
+async function confirmWhitelist() {
+  const ip = document.getElementById('wl-ip').value.trim();
+  const label = document.getElementById('wl-label').value.trim();
+  if (!ip) return showToast('Enter an IP address','warning');
+  await fetch('/api/whitelist',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ip,label})});
+  showToast(`${ip} added to whitelist`,'success');
+  document.getElementById('wl-modal').style.display='none';
+  setTimeout(()=>location.reload(),1000);
+}
+async function unblockIp(ip) {
+  await fetch('/api/unblock',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ip})});
+  showToast(`${ip} unblocked`,'success');
+  setTimeout(()=>location.reload(),1000);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block breadcrumb %}Home{% endblock %}
+{% block content %}
+
+<div class="dash-grid">
+
+  <!-- Metric Cards -->
+  <div class="metric-card c-blue">
+    <div class="mc-icon"><i class="fas fa-database"></i></div>
+    <div class="mc-data">
+      <div class="mc-value" id="stat-total">{{ stats.total_events }}</div>
+      <div class="mc-label">Total Logins Recorded</div>
+    </div>
+    <div class="mc-glow"></div>
+  </div>
+
+  <div class="metric-card c-red">
+    <div class="mc-icon"><i class="fas fa-bell"></i></div>
+    <div class="mc-data">
+      <div class="mc-value" id="stat-alerts">{{ stats.active_alerts }}</div>
+      <div class="mc-label">Open Warnings</div>
+    </div>
+    <div class="mc-glow"></div>
+  </div>
+
+  <div class="metric-card c-orange">
+    <div class="mc-icon"><i class="fas fa-lock-open"></i></div>
+    <div class="mc-data">
+      <div class="mc-value" id="stat-brute">{{ stats.brute_force }}</div>
+      <div class="mc-label">Password Attacks</div>
+    </div>
+    <div class="mc-glow"></div>
+  </div>
+
+  <div class="metric-card c-purple">
+    <div class="mc-icon"><i class="fas fa-wave-square"></i></div>
+    <div class="mc-data">
+      <div class="mc-value" id="stat-anomaly">{{ stats.anomalies }}</div>
+      <div class="mc-label">Unusual Activity</div>
+    </div>
+    <div class="mc-glow"></div>
+  </div>
+
+  <div class="metric-card c-green">
+    <div class="mc-icon"><i class="fas fa-calendar-day"></i></div>
+    <div class="mc-data">
+      <div class="mc-value" id="stat-today">{{ stats.today_events }}</div>
+      <div class="mc-label">Today's Events</div>
+    </div>
+    <div class="mc-glow"></div>
+  </div>
+
+  <!-- Event Trend Chart -->
+  <div class="chart-card span-2">
+    <div class="card-header">
+      <span><i class="fas fa-chart-line"></i> Login Activity – Last 7 Days</span>
+      <span class="card-badge live-badge"><i class="fas fa-circle pulse-dot"></i> LIVE</span>
+    </div>
+    <canvas id="trendChart" height="80"></canvas>
+  </div>
+
+  <!-- Severity Donut -->
+  <div class="chart-card">
+    <div class="card-header"><span><i class="fas fa-chart-pie"></i> Warning Breakdown</span></div>
+    <div class="donut-wrap">
+      <canvas id="severityChart"></canvas>
+      <div class="donut-center">
+        <span class="donut-num" id="stat-alerts2">{{ stats.active_alerts }}</span>
+        <span class="donut-lbl">Warnings</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Event Types Bar -->
+  <div class="chart-card">
+    <div class="card-header"><span><i class="fas fa-chart-bar"></i> Event Types</span></div>
+    <canvas id="typeChart" height="150"></canvas>
+  </div>
+
+  <!-- Recent Alerts Table -->
+  <div class="table-card span-3">
+    <div class="card-header">
+      <span><i class="fas fa-bolt"></i> Recent Warnings</span>
+      <a href="/alerts" class="card-link">See All <i class="fas fa-arrow-right"></i></a>
+    </div>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead><tr>
+          <th>#</th><th>Type</th><th>Danger</th><th>Source IP</th><th>What Happened</th><th>Time</th><th>Status</th>
+        </tr></thead>
+        <tbody>
+          {% for a in stats.recent_alerts %}
+          <tr>
+            <td class="mono">#{{ a.id }}</td>
+            <td><span class="type-tag">{{ a.alert_type | replace('_',' ') }}</span></td>
+            <td><span class="sev-badge sev-{{ a.severity|lower }}">{{ a.severity }}</span></td>
+            <td class="mono ip">{{ a.source_ip }}</td>
+            <td class="desc-cell">{{ a.description[:55] }}{% if a.description|length > 55 %}...{% endif %}</td>
+            <td class="mono ts">{{ a.created_at }}</td>
+            <td><span class="status-tag {{ 'open' if a.status=='Open' else 'resolved' }}">{{ a.status }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const trendData  = {{ stats.event_trend  | tojson }};
+const sevData    = {{ stats.severity_counts | tojson }};
+const eventTypes = {{ stats.event_types  | tojson }};
+initDashboardCharts(trendData, sevData, eventTypes);
+</script>
+{% endblock %}

@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% block breadcrumb %}Settings{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h2><i class="fas fa-sliders"></i> Settings</h2>
+  <div class="ph-right">
+    <button class="btn-primary" onclick="saveAll()"><i class="fas fa-floppy-disk"></i> Save All</button>
+  </div>
+</div>
+
+<div class="settings-grid">
+
+  <!-- Detection -->
+  <div class="chart-card">
+    <div class="card-header"><span><i class="fas fa-shield-halved"></i> Attack Detection</span></div>
+    <div class="settings-form">
+      <div class="sf-group">
+        <label>Failed logins before warning</label>
+        <input type="number" id="bf_threshold" min="1" max="100"/>
+        <span class="sf-hint">Default 5 — lower = more sensitive</span>
+      </div>
+      <div class="sf-group">
+        <label>Time window (seconds)</label>
+        <input type="number" id="bf_window" min="10" max="3600"/>
+        <span class="sf-hint">Count failures within this period</span>
+      </div>
+      <div class="sf-group">
+        <label>AI sensitivity (0.01–0.50)</label>
+        <input type="number" id="anomaly_sensitivity" step="0.01" min="0.01" max="0.5"/>
+        <span class="sf-hint">Higher = more anomalies flagged</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Log file -->
+  <div class="chart-card">
+    <div class="card-header"><span><i class="fas fa-file-lines"></i> Live Log Monitoring</span></div>
+    <div class="settings-form">
+      <div class="sf-group">
+        <label>Log file path to watch</label>
+        <input type="text" id="log_path" placeholder="e.g. /var/log/auth.log" style="max-width:100%;font-size:12px"/>
+        <span class="sf-hint">Leave blank to use Windows Event Log (auto on Windows)</span>
+      </div>
+      <div class="watcher-status" id="watcher-status" style="font-size:12px;color:#64748b;margin-top:8px"></div>
+    </div>
+  </div>
+
+  <!-- Auto-block -->
+  <div class="chart-card">
+    <div class="card-header"><span><i class="fas fa-ban"></i> Auto-Block Attackers</span></div>
+    <div class="settings-form">
+      <div class="sf-group">
+        <label>Enable auto-block</label>
+        <select id="auto_block_enabled" style="background:#0f1420;border:1px solid rgba(99,179,237,0.15);color:#e2e8f0;padding:8px 12px;border-radius:6px;font-size:13px;outline:none">
+          <option value="false">Disabled</option>
+          <option value="true">Enabled</option>
+        </select>
+        <span class="sf-hint">Auto-block IPs that exceed the threshold</span>
+      </div>
+      <div class="sf-group">
+        <label>Auto-block after (failures in 5 min)</label>
+        <input type="number" id="auto_block_threshold" min="5" max="100"/>
+        <span class="sf-hint">Default 10</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Email alerts -->
+  <div class="chart-card">
+    <div class="card-header"><span><i class="fas fa-envelope"></i> Email Alerts</span></div>
+    <div class="settings-form">
+      <div class="sf-group">
+        <label>Enable email alerts</label>
+        <select id="email_alerts" style="background:#0f1420;border:1px solid rgba(99,179,237,0.15);color:#e2e8f0;padding:8px 12px;border-radius:6px;font-size:13px;outline:none">
+          <option value="false">Disabled</option>
+          <option value="true">Enabled</option>
+        </select>
+      </div>
+      <div class="sf-group"><label>Send alerts to (email)</label><input type="email" id="email_to" placeholder="you@example.com" style="max-width:100%"/></div>
+      <div class="sf-group"><label>SMTP Server</label><input type="text" id="smtp_host" placeholder="smtp.gmail.com" style="max-width:100%"/></div>
+      <div class="sf-group"><label>SMTP Port</label><input type="number" id="smtp_port" placeholder="587"/></div>
+      <div class="sf-group"><label>SMTP Username</label><input type="text" id="smtp_user" placeholder="your@gmail.com" style="max-width:100%"/></div>
+      <div class="sf-group"><label>SMTP Password / App Password</label><input type="password" id="smtp_pass" placeholder="••••••••" style="max-width:100%"/></div>
+      <div class="demo-note"><i class="fas fa-circle-info"></i> For Gmail: use an App Password (not your main password). Go to Google Account → Security → App Passwords.</div>
+    </div>
+  </div>
+
+  <!-- System info -->
+  <div class="chart-card">
+    <div class="card-header"><span><i class="fas fa-info-circle"></i> System Info</span></div>
+    <div class="sys-info-grid">
+      <div class="si-row"><span class="si-key">System</span><span class="si-val mono">SentinelAI v2.0</span></div>
+      <div class="si-row"><span class="si-key">Backend</span><span class="si-val mono">Python / Flask</span></div>
+      <div class="si-row"><span class="si-key">Database</span><span class="si-val mono">SQLite3</span></div>
+      <div class="si-row"><span class="si-key">AI Engine</span><span class="si-val mono">Isolation Forest</span></div>
+      <div class="si-row"><span class="si-key">Developer</span><span class="si-val mono">Suraj – BCA Cyber Security</span></div>
+      <div class="si-row"><span class="si-key">Logged in as</span><span class="si-val mono">{{ user }} ({{ role }})</span></div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+      <a href="/profile" class="btn-ghost"><i class="fas fa-user-shield"></i> Change Password</a>
+      <a href="/logout"  class="btn-ghost"><i class="fas fa-right-from-bracket"></i> Logout</a>
+    </div>
+  </div>
+
+  <!-- Demo controls -->
+  <div class="chart-card">
+    <div class="card-header"><span><i class="fas fa-vial"></i> Demo / Testing</span></div>
+    <div class="demo-btns">
+      <button class="btn-primary"   onclick="simulateAttack()"><i class="fas fa-bug"></i> Simulate Password Attack</button>
+      <button class="btn-secondary" onclick="simulateAnomaly()"><i class="fas fa-wave-square"></i> Simulate Unusual Login</button>
+      <button class="btn-ghost"     onclick="trainModel()"><i class="fas fa-graduation-cap"></i> Train AI on Existing Data</button>
+    </div>
+    <div class="demo-note" style="margin-top:10px"><i class="fas fa-circle-info"></i> These create fake events for testing only.</div>
+  </div>
+
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function loadSettings() {
+  const res  = await fetch('/api/settings');
+  const data = await res.json();
+  const set  = (id, v) => { const el = document.getElementById(id); if(el && v!==undefined) el.value = v; };
+  set('bf_threshold',        data.bf_threshold);
+  set('bf_window',           data.bf_window);
+  set('anomaly_sensitivity', data.anomaly_sensitivity);
+  set('log_path',            data.log_path||'');
+  set('email_alerts',        data.email_alerts||'false');
+  set('email_to',            data.email_to||'');
+  set('smtp_host',           data.smtp_host||'smtp.gmail.com');
+  set('smtp_port',           data.smtp_port||'587');
+  set('smtp_user',           data.smtp_user||'');
+  set('auto_block_enabled',  data.auto_block_enabled||'false');
+  set('auto_block_threshold',data.auto_block_threshold||'10');
+}
+
+async function saveAll() {
+  const val = id => document.getElementById(id)?.value || '';
+  const payload = {
+    bf_threshold:         val('bf_threshold'),
+    bf_window:            val('bf_window'),
+    anomaly_sensitivity:  val('anomaly_sensitivity'),
+    log_path:             val('log_path'),
+    email_alerts:         val('email_alerts'),
+    email_to:             val('email_to'),
+    smtp_host:            val('smtp_host'),
+    smtp_port:            val('smtp_port'),
+    smtp_user:            val('smtp_user'),
+    smtp_pass:            val('smtp_pass'),
+    auto_block_enabled:   val('auto_block_enabled'),
+    auto_block_threshold: val('auto_block_threshold'),
+  };
+  await fetch('/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  showToast('Settings saved!','success');
+}
+
+async function loadWatcherStatus() {
+  const res  = await fetch('/api/watcher/status');
+  const data = await res.json();
+  const el   = document.getElementById('watcher-status');
+  if (!el) return;
+  if (data.running && data.log_path) {
+    el.innerHTML = `<span style="color:#10b981"><i class="fas fa-circle pulse-dot"></i> Watching: ${data.log_path}</span>`;
+  } else if (data.running) {
+    el.innerHTML = `<span style="color:#06b6d4"><i class="fas fa-circle pulse-dot"></i> Running – using Windows Event Log</span>`;
+  } else {
+    el.innerHTML = `<span style="color:#64748b"><i class="fas fa-circle"></i> Watcher stopped</span>`;
+  }
+}
+
+async function trainModel() {
+  showToast('Training AI model...','info');
+  const res  = await fetch('/api/train_model',{method:'POST'});
+  const data = await res.json();
+  showToast(data.message, data.success?'success':'warning');
+}
+
+loadSettings();
+loadWatcherStatus();
+</script>
+{% endblock %}

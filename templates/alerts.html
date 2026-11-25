@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block breadcrumb %}Warnings{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h2><i class="fas fa-bell"></i> Active Warnings</h2>
+  <div class="ph-right">
+    <button class="btn-primary" onclick="simulateAttack()"><i class="fas fa-bug"></i> Fake Attack</button>
+    <button class="btn-secondary" onclick="simulateAnomaly()"><i class="fas fa-wave-square"></i> Fake Anomaly</button>
+  </div>
+</div>
+
+<!-- What do the colours mean? -->
+<div class="legend-bar">
+  <span class="legend-item"><span class="leg-dot" style="background:#ff006e"></span> Critical – Very serious, act now</span>
+  <span class="legend-item"><span class="leg-dot" style="background:#f97316"></span> High – Important, investigate soon</span>
+  <span class="legend-item"><span class="leg-dot" style="background:#eab308"></span> Medium – Worth checking</span>
+  <span class="legend-item"><span class="leg-dot" style="background:#10b981"></span> Low – Minor, keep an eye on it</span>
+</div>
+
+<div class="filter-bar">
+  <div class="filter-group">
+    <label>Status</label>
+    <select id="f-status" onchange="loadAlerts()">
+      <option value="">All</option>
+      <option value="Open">Open</option>
+      <option value="Resolved">Resolved</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>Danger Level</label>
+    <select id="f-sev" onchange="loadAlerts()">
+      <option value="">All</option>
+      <option value="CRITICAL">Critical</option>
+      <option value="HIGH">High</option>
+      <option value="MEDIUM">Medium</option>
+      <option value="LOW">Low</option>
+    </select>
+  </div>
+</div>
+
+<div class="alerts-grid" id="alerts-grid">
+  <div class="loading-cell"><i class="fas fa-spinner fa-spin"></i> Loading warnings...</div>
+</div>
+
+<!-- Resolve Modal -->
+<div class="modal-overlay" id="resolve-modal" style="display:none" onclick="closeModal(event)">
+  <div class="modal-box">
+    <div class="modal-header"><h3><i class="fas fa-check-circle"></i> Mark as Handled</h3></div>
+    <p class="modal-sub">Add a note about what you did to fix this (optional).</p>
+    <input type="hidden" id="resolve-alert-id"/>
+    <textarea id="resolve-note" placeholder="e.g. Blocked the IP address in the firewall..." rows="4"></textarea>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="confirmResolve()"><i class="fas fa-check"></i> Mark Handled</button>
+      <button class="btn-ghost" onclick="document.getElementById('resolve-modal').style.display='none'">Cancel</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+const ALERT_LABELS = {
+  BRUTE_FORCE:    'Password Attack',
+  ANOMALY:        'Unusual Behaviour',
+  MULTIPLE_USERS: 'Multiple Accounts Targeted',
+  PORT_SCAN:      'Port Scan',
+  SUSPICIOUS_LOGIN: 'Suspicious Login'
+};
+
+async function loadAlerts() {
+  const status = document.getElementById('f-status').value;
+  const sev    = document.getElementById('f-sev').value;
+  const params = new URLSearchParams();
+  if (status) params.set('status', status);
+  if (sev)    params.set('severity', sev);
+  const res  = await fetch('/api/alerts?' + params);
+  const data = await res.json();
+  const grid = document.getElementById('alerts-grid');
+  if (!data.alerts.length) {
+    grid.innerHTML = '<div class="empty-state"><i class="fas fa-shield-check fa-3x"></i><p>No warnings found – system is clean!</p></div>';
+    return;
+  }
+  grid.innerHTML = data.alerts.map(a => `
+    <div class="alert-card sev-border-${(a.severity||'low').toLowerCase()}">
+      <div class="ac-header">
+        <span class="type-tag">${ALERT_LABELS[a.alert_type]||a.alert_type}</span>
+        <span class="sev-badge sev-${(a.severity||'low').toLowerCase()}">${a.severity}</span>
+      </div>
+      <div class="ac-ip"><i class="fas fa-network-wired"></i> From IP: ${a.source_ip||'Unknown'}</div>
+      <div class="ac-desc">${a.description||''}</div>
+      <div class="ac-footer">
+        <span class="mono ts">${a.created_at}</span>
+        <span class="status-tag ${a.status==='Open'?'open':'resolved'}">${a.status==='Open'?'Open':'Resolved'}</span>
+      </div>
+      <div class="ac-actions">
+        <button class="btn-sm btn-blue"  onclick="window.location.href='/analysis?alert_id=${a.id}'"><i class="fas fa-brain"></i> AI Scan</button>
+        <button class="btn-sm btn-green" onclick="generateReport(${a.id})"><i class="fas fa-file"></i> Report</button>
+        ${a.status==='Open'?`<button class="btn-sm btn-red" onclick="openResolve(${a.id})"><i class="fas fa-check"></i> Fix</button>`:''}
+      </div>
+    </div>`).join('');
+}
+
+function openResolve(id) {
+  document.getElementById('resolve-alert-id').value = id;
+  document.getElementById('resolve-note').value = '';
+  document.getElementById('resolve-modal').style.display = 'flex';
+}
+function closeModal(e) {
+  if (e.target.classList.contains('modal-overlay'))
+    document.getElementById('resolve-modal').style.display = 'none';
+}
+async function confirmResolve() {
+  const id   = document.getElementById('resolve-alert-id').value;
+  const note = document.getElementById('resolve-note').value;
+  await fetch(`/api/alerts/${id}/resolve`, {
+    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({note})
+  });
+  document.getElementById('resolve-modal').style.display = 'none';
+  showToast('Warning marked as handled!', 'success');
+  loadAlerts();
+}
+async function generateReport(id) {
+  showToast('Creating report...', 'info');
+  const res  = await fetch('/api/report/generate', {
+    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({alert_id: id})
+  });
+  const data = await res.json();
+  if (data.incident_id) {
+    showToast('Report ready! Go to Reports page.', 'success');
+    setTimeout(() => window.location.href='/reports', 1500);
+  }
+}
+
+loadAlerts();
+setInterval(loadAlerts, 15000);
+</script>
+{% endblock %}

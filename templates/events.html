@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block breadcrumb %}Login History{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h2><i class="fas fa-list-ul"></i> Login &amp; Activity History</h2>
+  <div class="ph-right">
+    <span class="live-indicator"><i class="fas fa-circle pulse-dot"></i> Auto-updating</span>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="filter-bar">
+  <div class="filter-group">
+    <label>Activity Type</label>
+    <select id="f-type" onchange="loadEvents()">
+      <option value="">All Types</option>
+      <option value="SSH_AUTH">Login Attempt</option>
+      <option value="INVALID_USER">Unknown User</option>
+      <option value="SUDO">Admin Command</option>
+      <option value="SUSPICIOUS_LOGIN">Suspicious Login</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>Result</label>
+    <select id="f-outcome" onchange="loadEvents()">
+      <option value="">All</option>
+      <option value="FAILURE">Failed</option>
+      <option value="SUCCESS">Successful</option>
+      <option value="INFO">Info</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>IP Address</label>
+    <input type="text" id="f-ip" placeholder="e.g. 192.168.1" oninput="debouncedLoad()"/>
+  </div>
+  <button class="btn-primary" onclick="loadEvents()"><i class="fas fa-filter"></i> Filter</button>
+  <button class="btn-ghost" onclick="clearFilters()"><i class="fas fa-xmark"></i> Clear</button>
+</div>
+
+<!-- Manual log paste box -->
+<div class="log-ingest-box">
+  <div class="card-header"><span><i class="fas fa-terminal"></i> Paste a Log Line to Test</span></div>
+  <div class="log-ingest-inner">
+    <input type="text" id="log-line-input"
+      placeholder="Paste a system log line here — e.g. Nov 21 14:32 sshd Failed password for admin from 1.2.3.4"
+      class="log-input"/>
+    <button class="btn-primary" onclick="parseLine()"><i class="fas fa-play"></i> Add</button>
+  </div>
+  <div class="log-hint">This lets you manually feed a log line into the system to see how SentinelAI reacts.</div>
+</div>
+
+<div class="table-card">
+  <div class="card-header">
+    <span><i class="fas fa-table"></i> Events <span class="count-badge" id="event-count">-</span></span>
+    <div class="pagination" id="pagination"></div>
+  </div>
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead><tr>
+        <th>#</th><th>Time</th><th>Activity</th><th>IP Address</th>
+        <th>Username</th><th>Result</th><th>Risk</th><th>Raw Log</th>
+      </tr></thead>
+      <tbody id="events-body">
+        <tr><td colspan="8" class="loading-cell"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+let currentPage = 1;
+let loadTimer = null;
+
+function debouncedLoad() {
+  clearTimeout(loadTimer);
+  loadTimer = setTimeout(loadEvents, 500);
+}
+
+function clearFilters() {
+  document.getElementById('f-type').value = '';
+  document.getElementById('f-outcome').value = '';
+  document.getElementById('f-ip').value = '';
+  loadEvents();
+}
+
+const TYPE_LABELS = {
+  SSH_AUTH: 'Login Attempt', INVALID_USER: 'Unknown User',
+  SUDO: 'Admin Command', SUSPICIOUS_LOGIN: 'Suspicious Login',
+  SYSTEM: 'System', DISCONNECT: 'Disconnect', UNKNOWN: 'Unknown'
+};
+
+async function loadEvents(page) {
+  if (page) currentPage = page;
+  const type    = document.getElementById('f-type').value;
+  const outcome = document.getElementById('f-outcome').value;
+  const ip      = document.getElementById('f-ip').value;
+  const params  = new URLSearchParams({ page: currentPage, limit: 50 });
+  if (type)    params.set('type', type);
+  if (outcome) params.set('outcome', outcome);
+  if (ip)      params.set('ip', ip);
+  const res  = await fetch('/api/events?' + params);
+  const data = await res.json();
+  document.getElementById('event-count').textContent = data.total;
+  const tbody = document.getElementById('events-body');
+  if (!data.events.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-cell">No events found</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.events.map(e => `
+    <tr class="${e.outcome==='FAILURE'?'row-fail':e.outcome==='SUCCESS'?'row-ok':''}">
+      <td class="mono">${e.id}</td>
+      <td class="mono ts">${e.timestamp}</td>
+      <td><span class="type-tag">${TYPE_LABELS[e.event_type]||e.event_type}</span></td>
+      <td class="mono ip">${e.source_ip||'-'}</td>
+      <td class="mono">${e.username||'-'}</td>
+      <td><span class="outcome-tag ${(e.outcome||'').toLowerCase()}">${e.outcome==='FAILURE'?'Failed':e.outcome==='SUCCESS'?'Success':e.outcome||'-'}</span></td>
+      <td><div class="sev-bar"><div class="sev-fill" style="width:${Math.min((e.severity||0)*100,100)}%"></div></div></td>
+      <td class="raw-log" title="${e.raw_log||''}">${(e.raw_log||'').substring(0,65)}${(e.raw_log||'').length>65?'...':''}</td>
+    </tr>`).join('');
+  buildPagination(data.pages, currentPage);
+}
+
+function buildPagination(pages, current) {
+  const p = document.getElementById('pagination');
+  let html = '';
+  if (current > 1) html += `<button class="pg-btn" onclick="loadEvents(${current-1})"><i class="fas fa-chevron-left"></i></button>`;
+  for (let i = Math.max(1,current-2); i <= Math.min(pages,current+2); i++)
+    html += `<button class="pg-btn ${i===current?'active':''}" onclick="loadEvents(${i})">${i}</button>`;
+  if (current < pages) html += `<button class="pg-btn" onclick="loadEvents(${current+1})"><i class="fas fa-chevron-right"></i></button>`;
+  p.innerHTML = html;
+}
+
+async function parseLine() {
+  const line = document.getElementById('log-line-input').value.trim();
+  if (!line) return;
+  const res = await fetch('/api/parse_log', {
+    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({line})
+  });
+  const data = await res.json();
+  if (data.parsed) {
+    showToast('Log line added successfully!', 'success');
+    document.getElementById('log-line-input').value = '';
+    loadEvents();
+  } else {
+    showToast('Could not read that log format', 'warning');
+  }
+}
+
+loadEvents();
+setInterval(() => loadEvents(), 10000);
+</script>
+{% endblock %}

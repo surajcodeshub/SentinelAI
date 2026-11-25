@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block breadcrumb %}Reports{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h2><i class="fas fa-file-shield"></i> Incident Reports</h2>
+  <div class="ph-right">
+    <span class="live-indicator">{{ reports|length }} report(s) saved</span>
+  </div>
+</div>
+
+<div class="info-banner">
+  <i class="fas fa-lightbulb"></i>
+  <span>Reports are generated automatically when you click <strong>"Report"</strong> on any warning. Each report records what happened, when it happened, and what to do about it.</span>
+</div>
+
+<div class="reports-layout">
+
+  <!-- Left: list -->
+  <div class="reports-left">
+    <div class="chart-card">
+      <div class="card-header"><span><i class="fas fa-folder-open"></i> Saved Reports ({{ reports|length }})</span></div>
+      <div class="report-list">
+        {% if reports %}
+          {% for r in reports %}
+          <div class="report-item" onclick="showReport(this, `{{ r.content|e }}`, `{{ r.title|e }}`, `{{ r.generated_at }}`)">
+            <div class="ri-icon"><i class="fas fa-file-lines"></i></div>
+            <div class="ri-info">
+              <div class="ri-title">{{ r.title[:48] }}{% if r.title|length > 48 %}...{% endif %}</div>
+              <div class="ri-meta mono ts">{{ r.generated_at }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-state">
+            <i class="fas fa-file-circle-xmark fa-2x"></i>
+            <p>No reports yet.<br>Go to Warnings and click "Report" on any alert.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="chart-card" style="margin-top:1rem">
+      <div class="card-header"><span><i class="fas fa-triangle-exclamation"></i> Incidents ({{ incidents|length }})</span></div>
+      <div class="incident-list">
+        {% if incidents %}
+          {% for i in incidents %}
+          <div class="incident-item">
+            <div class="inc-priority {{ i.priority|lower }}">{{ i.priority }}</div>
+            <div class="inc-info">
+              <div class="inc-title">{{ i.title[:40] }}{% if i.title|length > 40 %}...{% endif %}</div>
+              <div class="inc-meta mono ts">{{ i.created_at }}</div>
+            </div>
+            <span class="status-tag {{ 'open' if i.status=='Open' else 'resolved' }}">{{ i.status }}</span>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-state"><p>No incidents logged.</p></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: viewer -->
+  <div class="reports-right">
+    <div class="chart-card report-viewer" id="report-viewer">
+      <div class="ai-placeholder">
+        <div class="ai-icon-big"><i class="fas fa-file-shield"></i></div>
+        <h3>Click a report to read it</h3>
+        <p>The full incident report will appear here.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function showReport(el, content, title, genAt) {
+  document.querySelectorAll('.report-item').forEach(x => x.classList.remove('selected'));
+  el.classList.add('selected');
+  const decoded = content
+    .replace(/&#39;/g,"'").replace(/&amp;/g,'&')
+    .replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"');
+  document.getElementById('report-viewer').innerHTML = `
+    <div class="report-content">
+      <div class="card-header">
+        <span><i class="fas fa-file-lines"></i> ${title}</span>
+        <span class="mono ts">${genAt}</span>
+      </div>
+      <pre class="report-pre">${decoded}</pre>
+    </div>`;
+}
+const firstItem = document.querySelector('.report-item');
+if (firstItem) firstItem.click();
+</script>
+{% endblock %}

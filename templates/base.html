@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SentinelAI – Security Monitor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}"/>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+
+<!-- Overlay for mobile sidebar -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon"><i class="fas fa-shield-halved"></i></div>
+    <div class="logo-text">
+      <span class="logo-title">SentinelAI</span>
+      <span class="logo-sub">Security Monitor</span>
+    </div>
+    <button class="sidebar-close-btn" onclick="closeSidebar()"><i class="fas fa-xmark"></i></button>
+  </div>
+
+  <div class="sidebar-status">
+    <span class="status-dot pulse"></span>
+    <span class="status-label">System Running</span>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a href="/" class="nav-item {% if page=='dashboard' %}active{% endif %}">
+      <i class="fas fa-gauge-high"></i><span>Home</span>
+    </a>
+    <a href="/events" class="nav-item {% if page=='events' %}active{% endif %}">
+      <i class="fas fa-list-ul"></i><span>Login History</span>
+    </a>
+    <a href="/alerts" class="nav-item {% if page=='alerts' %}active{% endif %}">
+      <i class="fas fa-bell"></i><span>Warnings</span>
+      <span class="badge-count" id="nav-alert-count"></span>
+    </a>
+    <a href="/analysis" class="nav-item {% if page=='analysis' %}active{% endif %}">
+      <i class="fas fa-brain"></i><span>AI Scan</span>
+    </a>
+    <a href="/reports" class="nav-item {% if page=='reports' %}active{% endif %}">
+      <i class="fas fa-file-shield"></i><span>Reports</span>
+    </a>
+    <a href="/blocked" class="nav-item {% if page=='blocked' %}active{% endif %}">
+      <i class="fas fa-ban"></i><span>Blocked IPs</span>
+    </a>
+    <a href="/settings" class="nav-item {% if page=='settings' %}active{% endif %}">
+      <i class="fas fa-sliders"></i><span>Settings</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-bottom">
+    <div class="threat-level">
+      <span class="tl-label">Danger Level</span>
+      <span class="tl-badge high" id="threat-level-badge">HIGH</span>
+    </div>
+    <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(99,179,237,0.1);display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-size:12px;color:#64748b"><i class="fas fa-user-circle" style="margin-right:5px"></i>{{ user or 'analyst' }}</span>
+      <a href="/logout" style="font-size:11px;color:#64748b;text-decoration:none;padding:3px 8px;border:1px solid rgba(99,179,237,0.1);border-radius:4px;" title="Logout"><i class="fas fa-right-from-bracket"></i></a>
+    </div>
+  </div>
+</aside>
+
+<!-- Main content -->
+<div class="main-content" id="main-content">
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="sidebar-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+      <div class="breadcrumb">{% block breadcrumb %}Home{% endblock %}</div>
+    </div>
+    <div class="topbar-right">
+      <div class="alert-badges">
+        <div class="abadge critical" title="Critical alerts"><i class="fas fa-skull-crossbones"></i><span id="hdr-critical">0</span></div>
+        <div class="abadge high" title="High alerts"><i class="fas fa-fire"></i><span id="hdr-high">0</span></div>
+        <div class="abadge medium" title="Medium alerts"><i class="fas fa-triangle-exclamation"></i><span id="hdr-medium">0</span></div>
+        <div class="abadge low" title="Low alerts"><i class="fas fa-circle-info"></i><span id="hdr-low">0</span></div>
+      </div>
+      <div class="topbar-clock" id="clock"></div>
+      <button class="sim-btn" onclick="simulateAttack()" title="Run a test attack">
+        <i class="fas fa-bug"></i><span class="sim-label"> Test</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="page-body">
+    {% block content %}{% endblock %}
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

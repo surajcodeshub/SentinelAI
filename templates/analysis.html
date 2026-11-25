@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% block breadcrumb %}AI Scan{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h2><i class="fas fa-brain"></i> AI Threat Scanner</h2>
+  <div class="ph-right">
+    <button class="btn-primary" onclick="trainModel()">
+      <i class="fas fa-graduation-cap"></i> Train AI Model
+    </button>
+  </div>
+</div>
+
+<div class="info-banner">
+  <i class="fas fa-lightbulb"></i>
+  <span>Select any warning from the left panel — the AI will explain what happened in plain English and tell you exactly what to do.</span>
+</div>
+
+<div class="analysis-layout">
+  <!-- Left: Alert selector -->
+  <div class="analysis-left">
+    <div class="chart-card">
+      <div class="card-header"><span><i class="fas fa-bell"></i> Open Warnings</span></div>
+      <div class="alert-selector" id="alert-selector">
+        {% if alerts %}
+          {% for a in alerts %}
+          <div class="as-item sev-border-left-{{ a.severity|lower }}"
+               onclick="selectAlert({{ a.id }}, this)">
+            <div class="asi-top">
+              <span class="type-tag">{{ a.alert_type | replace('_',' ') }}</span>
+              <span class="sev-badge sev-{{ a.severity|lower }}">{{ a.severity }}</span>
+            </div>
+            <div class="asi-ip mono">{{ a.source_ip }}</div>
+            <div class="asi-ts mono ts">{{ a.created_at }}</div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-state">
+            <i class="fas fa-shield-check fa-2x"></i>
+            <p>No open warnings</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Analysis output -->
+  <div class="analysis-right">
+    <div class="chart-card" id="analysis-panel">
+      <div class="ai-placeholder">
+        <div class="ai-icon-big"><i class="fas fa-brain"></i></div>
+        <h3>Click a warning to scan it</h3>
+        <p>The AI will break down the attack, classify it using industry standards, and suggest the exact steps you need to take.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ML Engine Status -->
+<div class="chart-card" style="margin-top:1.5rem">
+  <div class="card-header"><span><i class="fas fa-microchip"></i> Detection Engines</span></div>
+  <div class="ml-status-grid">
+    <div class="ml-stat">
+      <div class="ml-stat-icon"><i class="fas fa-tree"></i></div>
+      <div class="ml-stat-info">
+        <div class="ml-stat-name">Unusual Behaviour Detector (ML)</div>
+        <div class="ml-stat-status" id="model-status">
+          <span class="status-dot-sm yellow"></span> Click "Train AI Model" to activate
+        </div>
+      </div>
+    </div>
+    <div class="ml-stat">
+      <div class="ml-stat-icon"><i class="fas fa-shield-halved"></i></div>
+      <div class="ml-stat-info">
+        <div class="ml-stat-name">Password Attack Detector</div>
+        <div class="ml-stat-status"><span class="status-dot-sm green"></span> Active and running</div>
+      </div>
+    </div>
+    <div class="ml-stat">
+      <div class="ml-stat-icon"><i class="fas fa-network-wired"></i></div>
+      <div class="ml-stat-info">
+        <div class="ml-stat-name">AI Threat Explainer</div>
+        <div class="ml-stat-status"><span class="status-dot-sm green"></span> Active</div>
+      </div>
+    </div>
+    <div class="ml-stat">
+      <div class="ml-stat-icon"><i class="fas fa-satellite-dish"></i></div>
+      <div class="ml-stat-info">
+        <div class="ml-stat-name">Network Port Scanner</div>
+        <div class="ml-stat-status"><span class="status-dot-sm yellow"></span> Planned for future</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+const urlParams  = new URLSearchParams(window.location.search);
+const preloadId  = urlParams.get('alert_id');
+
+const LABEL_MAP = {
+  BRUTE_FORCE:    'Password Attack',
+  ANOMALY:        'Unusual Behaviour',
+  MULTIPLE_USERS: 'Multiple Accounts Targeted',
+  PORT_SCAN:      'Port Scan',
+  SUSPICIOUS_LOGIN: 'Suspicious Login'
+};
+
+async function selectAlert(id, el) {
+  document.querySelectorAll('.as-item').forEach(x => x.classList.remove('selected'));
+  el.classList.add('selected');
+  const panel = document.getElementById('analysis-panel');
+  panel.innerHTML = '<div class="ai-loading"><i class="fas fa-brain fa-spin"></i><p>Scanning threat...</p></div>';
+  const res  = await fetch('/api/analyze', {
+    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({alert_id: id})
+  });
+  const data = await res.json();
+  renderAnalysis(data, id);
+}
+
+function renderAnalysis(data, alertId) {
+  const riskColor = {HIGH:'#ff4d6d',CRITICAL:'#ff006e',MEDIUM:'#ffd166',LOW:'#06d6a0'}[data.risk_level]||'#8b8d9b';
+  const actions   = (data.recommended_actions||[]).map((a,i) =>
+    `<div class="action-item"><span class="action-num">${i+1}</span><span>${a}</span></div>`
+  ).join('');
+  document.getElementById('analysis-panel').innerHTML = `
+    <div class="analysis-result">
+      <div class="ar-header">
+        <div class="ar-title"><i class="fas fa-shield-halved"></i> ${data.title||'Threat Found'}</div>
+        <div class="ar-badges">
+          <span class="risk-badge" style="background:${riskColor}20;color:${riskColor};border:1px solid ${riskColor}40">${data.risk_level} RISK</span>
+          <span class="mitre-badge" title="Industry attack classification"><i class="fas fa-crosshairs"></i> ${data.mitre_technique||'Unknown'}</span>
+        </div>
+      </div>
+      <div class="ar-meta">
+        <span><i class="fas fa-network-wired"></i> IP: ${data.source_ip||'-'}</span>
+        <span><i class="fas fa-user"></i> User: ${data.username||'-'}</span>
+        <span><i class="fas fa-clock"></i> ${data.analyzed_at||''}</span>
+      </div>
+      <div class="ar-section">
+        <div class="ar-section-title"><i class="fas fa-circle-info"></i> What happened</div>
+        <div class="ar-desc">${data.description||''}</div>
+      </div>
+      <div class="ar-section">
+        <div class="ar-section-title"><i class="fas fa-list-check"></i> What you should do</div>
+        <div class="actions-list">${actions}</div>
+      </div>
+      <div class="ar-actions">
+        <button class="btn-primary" onclick="generateReport(${alertId})">
+          <i class="fas fa-file-shield"></i> Save as Report
+        </button>
+      </div>
+    </div>`;
+}
+
+async function generateReport(id) {
+  showToast('Creating report...', 'info');
+  const res  = await fetch('/api/report/generate', {
+    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({alert_id: id})
+  });
+  const data = await res.json();
+  if (data.incident_id) {
+    showToast('Report saved!', 'success');
+    setTimeout(() => window.location.href='/reports', 2000);
+  }
+}
+
+async function trainModel() {
+  showToast('Training AI on your event data...', 'info');
+  const res  = await fetch('/api/train_model', {method:'POST'});
+  const data = await res.json();
+  document.getElementById('model-status').innerHTML = data.success
+    ? '<span class="status-dot-sm green"></span> Active – trained on your data'
+    : '<span class="status-dot-sm yellow"></span> ' + data.message;
+  showToast(data.message, data.success?'success':'warning');
+}
+
+if (preloadId) {
+  setTimeout(() => {
+    const first = document.querySelector('.as-item');
+    if (first) selectAlert(parseInt(preloadId), first);
+  }, 400);
+}
+</script>
+{% endblock %}
