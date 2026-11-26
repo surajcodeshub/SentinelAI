@@ -5,7 +5,7 @@ from datetime import timedelta
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-from flask import Flask, session, redirect, url_for, request, jsonify
+from flask import Flask, session, redirect, url_for, request, jsonify, render_template
 from database import init_db
 from routes.dashboard import dashboard_bp
 from routes.api import api_bp
@@ -50,11 +50,15 @@ def rate_limit():
 # ── Error handlers ────────────────────────────────────────────────────────────
 @app.errorhandler(404)
 def not_found(e):
+    if request.path.startswith('/api'):
+        return jsonify({'error': 'Not found'}), 404
     return redirect(url_for('dashboard.index'))
 
 @app.errorhandler(500)
 def server_error(e):
-    return jsonify({'error': 'Internal server error'}), 500
+    if request.path.startswith('/api'):
+        return jsonify({'error': 'Internal server error'}), 500
+    return render_template('login.html', error='Something went wrong. Please try again.'), 500
 
 # ── Startup ───────────────────────────────────────────────────────────────────
 with app.app_context():
@@ -65,15 +69,12 @@ with app.app_context():
     except Exception as e:
         print(f"[Seed] {e}")
 
-    # Register auth blueprint here to avoid circular imports
     from routes.auth import auth_bp
     app.register_blueprint(auth_bp)
 
-    # Start background log watcher
     from log_watcher import start_watcher
     start_watcher()
 
-    # Auto-train ML model if model file doesn't exist yet
     try:
         from ml.anomaly_detector import detector
         from database import get_events
